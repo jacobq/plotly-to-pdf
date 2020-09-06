@@ -1,5 +1,5 @@
 {
-  "name": "nsdi21-plots-plotly",
+  "name": "plots-plotly",
   "version": "0.0.0",
   "description": "Script for generating plots used in NSDI'21 paper submission",
   "main": "index.js",
