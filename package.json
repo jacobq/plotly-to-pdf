@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "jspdf": "^2.1.0",
-    "plotly.js-dist": "^1.55.1"
+    "plotly.js-dist": "^1.55.1",
+    "svg2pdf.js": "^2.0.0"
   }
 }

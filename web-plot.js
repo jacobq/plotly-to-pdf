@@ -1,18 +1,42 @@
+let fileNumber = 1;
 function appendChart(data, layout, config) {
     const plots = document.getElementById('plots');
     const images = document.getElementById('images');
     const gd = document.createElement('div');
     plots.append(gd);
     return Plotly.newPlot(gd, data, layout, config).then((gd) => {
+        const height = 480;
+        const width = 640;
         Plotly.toImage(gd,{
             format: 'svg',
-            height: 300,
-            width: 400,
+            height,
+            width,
         })
         .then((url) => {
             const img = document.createElement('img');
             img.src = url;
             images.append(img);
+            const doc = new jspdf.jsPDF({
+                orientation: "landscape",
+                unit: "mm",
+                format: [width, height]
+            });
+
+            // This is a little silly, but it seems that svg2pdf requires an SVG element (vs. image with SVG source)
+            // and plotly makes multiple SVG elements for its native plots (e.g. separate overlay for axes, legend, ...)
+            // so we take the exported SVG data and re-create an SVG element from it to use for svg2pdf.
+            let svgString = unescape(url); // data URL contains SVG content
+            svgString = svgString.slice(svgString.indexOf('<svg')); // strip-off the data URL header/prefix
+            const svg = new DOMParser().parseFromString(svgString, "text/xml").firstChild; // taking a cue from the svg module on npm
+            doc.svg(svg, {
+                //x:0,
+                y: -20, // I think there was some height reserved for a plot title or something...just looked better to me when scooted up a touch
+                //height: 100,
+                //width: 200,
+                loadExternalStyleSheets: true
+            }).then(() => {
+                doc.save(`chart-${fileNumber}.pdf`);
+            });
         })
     });
 }
