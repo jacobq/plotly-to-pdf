@@ -1,5 +1,4 @@
-let fileNumber = 1;
-function appendChart(data, layout, config) {
+function appendChart(chartName, data, layout, config) {
     const plots = document.getElementById('plots');
     const images = document.getElementById('images');
     const gd = document.createElement('div');
@@ -30,12 +29,12 @@ function appendChart(data, layout, config) {
             const svg = new DOMParser().parseFromString(svgString, "text/xml").firstChild; // taking a cue from the svg module on npm
             doc.svg(svg, {
                 //x:0,
-                y: -20, // I think there was some height reserved for a plot title or something...just looked better to me when scooted up a touch
+                //y: -20, // I think there was some height reserved for a plot title or something...just looked better to me when scooted up a touch
                 //height: 100,
                 //width: 200,
-                loadExternalStyleSheets: true
+                //loadExternalStyleSheets: true
             }).then(() => {
-                doc.save(`chart-${fileNumber}.pdf`);
+                doc.save(`${chartName}.pdf`);
             });
         })
     });
@@ -45,47 +44,65 @@ function appendChart(data, layout, config) {
 // Exp A (monolithic vs modular)
 function expA() {
     const cores = [1, 2, 4, 8, 16, 32];
-    function sim(cores, flows) {
-        const k = 100;
-        const noise = 10 * Math.random();
-        const max = 198;
-        return Math.min(max, k * Math.pow(cores,1.1) / Math.log(flows)) + noise;
+    const cases = [{
+        title: 'Monolithic NF',
+        nameInFile: 'monolithic',
+        sim(cores, flows) {
+            const k = 44;
+            const noise = 2 * Math.random();
+            const max = 198;
+            return Math.min(max, k * Math.pow(cores,0.5) / Math.log(flows)) + noise;
+        },
+    }, {
+        title: 'Modular NF',
+        nameInFile: 'modular',
+        sim(cores, flows) {
+            const k = 100;
+            const noise = 10 * Math.random();
+            const max = 198;
+            return Math.min(max, k * Math.pow(cores,1.1) / Math.log(flows)) + noise;
+        },
+    }];
+
+    for (let {title, nameInFile, sim} of cases) {
+        const traces = [{
+            y: cores.map(c => sim(c, 100)),
+            name: '100 flows',
+        }, {
+            y: cores.map(c => sim(c, 1000)),
+            name: '1k flows',
+        }, {
+            y: cores.map(c => sim(c, 1e4)),
+            name: '10k flows',
+        }, {
+            y: cores.map(c => sim(c, 1e5)),
+            name: '100k flows',
+        }, {
+            y: cores.map(c => sim(c, 1e6)),
+            name: '1M flows',
+        }].map((t) => {
+            t.x = cores;
+            t.type = 'bar';
+            return t;
+        });
+
+        const layout = {
+            //title: `${name} Performance`,
+            title,
+            barmode: 'group',
+            xaxis: {
+                title: 'Number of cores',
+                type: 'category'
+            },
+            yaxis: {
+                title: 'Throughput (MPPS)',
+                //range: [0, 200],
+                type: 'lin',
+            },
+        };
+
+        appendChart(`expA-${nameInFile}`, traces, layout);
     }
-
-    const traces = [{
-        y: cores.map(c => sim(c, 100)),
-        name: '100 flows',
-    }, {
-        y: cores.map(c => sim(c, 1000)),
-        name: '1k flows',
-    }, {
-        y: cores.map(c => sim(c, 1e4)),
-        name: '10k flows',
-    }, {
-        y: cores.map(c => sim(c, 1e5)),
-        name: '100k flows',
-    }, {
-        y: cores.map(c => sim(c, 1e6)),
-        name: '1M flows',
-    }].map((t) => {
-        t.x = cores;
-        t.type = 'bar';
-        return t;
-    });
-
-    const layout = {
-        //title: 'Exp A',
-        barmode: 'group',
-        xaxis: {
-            title: 'Number of cores',
-            type: 'category'
-        },
-        yaxis: {
-            title: 'Throughput (MPPS)',
-        },
-    };
-
-    appendChart(traces, layout);
 }
 
 // Exp B (centralized control)
